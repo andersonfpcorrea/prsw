@@ -1,5 +1,5 @@
 {
-  "app": "npm run build && npx ts-node --prefer-ts-exts cdk/main.ts",
+  "app": "npm run build && node .dist/cdk/main.js",
   "watch": {
     "include": ["**"],
     "exclude": [
