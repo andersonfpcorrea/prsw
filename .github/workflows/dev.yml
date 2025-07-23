@@ -46,7 +46,7 @@ jobs:
 
       # apply seed data to dev-ci stage
       - name: add seed data
-        run: node seed-restaurants.js
+        run: npm run seed
 
       - name: run integration test
         run: npm run test

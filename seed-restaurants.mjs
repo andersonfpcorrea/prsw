@@ -5,8 +5,6 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 import { config } from "dotenv";
 
-config();
-
 const dynamodbClient = new DynamoDB({
   region: "us-east-1",
 });
