@@ -1,4 +1,4 @@
-import { CfnElement, Fn, Stack, StackProps } from "aws-cdk-lib";
+import { CfnElement, CfnOutput, Fn, Stack, StackProps } from "aws-cdk-lib";
 import { Construct } from "constructs";
 import { Runtime, Code, Function } from "aws-cdk-lib/aws-lambda";
 import {
@@ -17,6 +17,7 @@ interface ApiStackProps extends StackProps {
   restaurantsTable?: Table;
   cognitoUserPool: UserPool;
   webUserPoolClient: UserPoolClient;
+  serverUserPoolClient: UserPoolClient;
 }
 
 export class ApiStack extends Stack {
@@ -123,5 +124,13 @@ export class ApiStack extends Stack {
     });
 
     getIndexFunction.role?.addToPrincipalPolicy(apiInvokePolicy);
+
+    new CfnOutput(this, "ApiUrl", {
+      value: api.url,
+    });
+
+    new CfnOutput(this, "CognitoServerClientId", {
+      value: props?.serverUserPoolClient.userPoolClientId ?? "",
+    });
   }
 }
