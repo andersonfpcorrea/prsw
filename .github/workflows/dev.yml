@@ -1,0 +1,63 @@
+name: deploy dev
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    # this prevents concurrent builds
+    concurrency: dev-environment
+
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # this is required for authenticating to AWS via the OIDC Provider we set up
+    permissions:
+      id-token: write
+      contents: write
+
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "20"
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-region: us-east-1
+          role-to-assume: arn:aws:iam::252802802601:role/GitHubActionsRole
+          role-session-name: GithubActionsSession
+
+      - name: npm ci
+        run: npm ci
+
+      - name: install CDK
+        run: npm install -g aws-cdk
+
+      # this provisions a temporary stage called 'dev-ci'
+      - name: deploy temp environment
+        run: cdk deploy --all --context stageName=dev-ci --require-approval never
+
+      # this generates the .env file for the 'dev-ci' stage
+      - name: export env
+        run: ./export-env.sh ApiStack-dev-ci us-east-1
+
+      # apply seed data to dev-ci stage
+      - name: add seed data
+        run: node seed-restaurants.js
+
+      - name: run integration test
+        run: npm run test
+
+      - name: run end-to-end tests
+        run: npm run test:e2e
+
+      # delete the 'dev-ci' stage
+      - name: destroy temp environment
+        run: cdk destroy --all --context stageName=dev-ci --force
+
+      # deploy to the ACTUAL dev stage
+      - name: deploy to dev
+        run: cdk deploy --all --require-approval never
